@@ -5,6 +5,8 @@ import {
   type BaseModel,
   type Field,
   ForeignKey,
+  Max,
+  Min,
   type ModelClass,
   Q,
   type QNode,
@@ -54,7 +56,7 @@ import {
   type InlineView,
 } from './templates/changeform'
 import { ChangeListPage, type ResultCell, type ResultHeader, type ResultRow } from './templates/changelist'
-import { type DeletedTree, HistoryPage } from './templates/pages'
+import { DeleteConfirmationPage, type DeletedTree, HistoryPage } from './templates/pages'
 import { Widget } from './templates/widgets'
 import {
   capfirst,
@@ -1620,7 +1622,6 @@ export class ModelAdmin<M extends BaseModel = any> extends BaseModelAdmin<M> {
     const preserved = this.getPreservedFilters(c)
     const title =
       permsNeeded.length || prot.length ? `Cannot delete ${this.opts.verboseName}` : 'Are you sure?'
-    const { DeleteConfirmationPage } = await import('./templates/pages')
     const url = new URL(c.req.url)
     return this.adminSite.render(
       c,
@@ -1722,7 +1723,6 @@ const SEARCH_LOOKUPS = new Set([
 ])
 
 async function distinctYears(qs: QuerySet<any>, field: string): Promise<number[]> {
-  const { Min, Max } = await import('@ghuri/orm')
   const agg = (await qs.aggregate({ first: Min(field), last: Max(field) })) as {
     first: unknown
     last: unknown

@@ -122,6 +122,7 @@ a.button { padding: 4px 5px; }
 .vForeignKeyRawIdAdminField, .vManyToManyRawIdAdminField { width: 16em; }
 .vJSONField { font-family: var(--font-family-monospace); }
 .inline-group .vTextField, .inline-group textarea { width: auto; min-width: 10em; }
+.inline-group .tabular textarea { height: 5em; }
 
 /* messages & errors */
 ul.messagelist { padding: 0; margin: 0; }
@@ -149,7 +150,7 @@ td ul.errorlist li { margin: 0; }
 /* layout */
 #container { position: relative; width: 100%; min-width: 980px; padding: 0; display: flex; flex-direction: column; height: 100%; }
 #container > .main { display: flex; flex: 1 0 auto; }
-.main > .content { flex: 1 0; max-width: 100%; }
+.main > .content { order: 3; flex: 1 0; max-width: 100%; min-width: 0; }
 .skip-to-content-link:focus { left: 0; }
 #content { padding: 20px 40px; }
 .dashboard #content { width: 600px; }
@@ -387,13 +388,13 @@ td.delete, th.delete { text-align: center; }
 .delete-confirmation form .cancel-link:active, .delete-confirmation form .cancel-link:focus, .delete-confirmation form .cancel-link:hover { background: var(--close-button-hover-bg); }
 
 /* nav sidebar */
-#nav-sidebar { flex: 0 0 275px; left: -276px; margin-left: -276px; border-top: 1px solid transparent; border-right: 1px solid var(--hairline-color); background-color: var(--body-bg); overflow: auto; }
+#nav-sidebar { order: 1; flex: 0 0 275px; left: -276px; margin-left: -276px; border-top: 1px solid transparent; border-right: 1px solid var(--hairline-color); background-color: var(--body-bg); overflow: auto; }
 .main.shifted > #nav-sidebar { margin-left: 0; }
 #nav-sidebar .module th { width: 100%; overflow-wrap: anywhere; }
 #nav-sidebar .module th, #nav-sidebar .module caption { padding-left: 16px; }
 #nav-sidebar .module td { white-space: nowrap; }
 #nav-sidebar .current-model { background: var(--selected-row); }
-#toggle-nav-sidebar { flex: 0 0 23px; width: 23px; border: 0; border-right: 1px solid var(--hairline-color); background-color: var(--body-bg); cursor: pointer; font-size: 1.25rem; color: var(--link-fg); padding: 0; }
+#toggle-nav-sidebar { order: 2; align-self: stretch; flex: 0 0 23px; width: 23px; border: 0; border-right: 1px solid var(--hairline-color); background-color: var(--body-bg); cursor: pointer; font-size: 1.25rem; color: var(--link-fg); padding: 0; }
 #toggle-nav-sidebar::before { content: "\\00bb"; }
 .main.shifted #toggle-nav-sidebar::before { content: "\\00ab"; }
 #nav-filter { width: 100%; box-sizing: border-box; padding: 2px 5px; margin: 5px 0; border: 1px solid var(--border-color); background-color: var(--darkened-bg); color: var(--body-fg); }
