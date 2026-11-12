@@ -12,6 +12,11 @@ export interface DisplayOptions {
 }
 
 export interface ActionOptions {
+  /**
+   * Name posted by the action form (`?action=<name>`). Defaults to the function's name — arrow functions
+   * passed to `action()` have none, so they fall back to a slug of the description.
+   */
+  name?: string
   /** Label in the action dropdown (Django's `short_description`). */
   description?: string
   /** Required permissions: `'add' | 'change' | 'delete' | 'view'` or a custom name `x` checked by `hasXPermission(c)`. */
@@ -49,11 +54,33 @@ export interface FunctionDecorator {
   (target: object, key: string | symbol, descriptor: PropertyDescriptor): PropertyDescriptor
 }
 
+/**
+ * Legacy (`experimentalDecorators`) method decorators compiled by Babel with decorator metadata — e.g. jiti, the
+ * TypeScript loader of the `ghuri` CLI — may receive the class prototype instead of the property descriptor
+ * (the no-op metadata decorators return their target). Recover the real descriptor in that case.
+ */
+function legacyMethodDescriptor(
+  target: unknown,
+  key: unknown,
+  descriptor: unknown,
+): PropertyDescriptor | undefined {
+  if (typeof key !== 'string' && typeof key !== 'symbol') return undefined
+  if (!target || (typeof target !== 'object' && typeof target !== 'function')) return undefined
+  if (descriptor !== undefined && descriptor !== target) return undefined
+  const real = Object.getOwnPropertyDescriptor(target, key)
+  return real && typeof real.value === 'function' ? real : undefined
+}
+
 function makeDecorator(key: symbol, opts: object): FunctionDecorator {
-  return ((fnOrTarget: any, _keyOrContext?: unknown, descriptor?: PropertyDescriptor) => {
+  return ((fnOrTarget: any, keyOrContext?: unknown, descriptor?: PropertyDescriptor) => {
     if (descriptor && typeof descriptor.value === 'function') {
       attach(descriptor.value, key, opts)
       return descriptor
+    }
+    const legacy = legacyMethodDescriptor(fnOrTarget, keyOrContext, descriptor)
+    if (legacy) {
+      attach(legacy.value, key, opts)
+      return legacy
     }
     if (typeof fnOrTarget !== 'function')
       throw new TypeError('display()/action() decorate functions or methods.')

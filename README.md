@@ -273,6 +273,9 @@ class PostAdmin extends ModelAdmin<Post> {
 }
 ```
 
+- The form posts the action's name: the method name, the function's name, or `name` in the options.
+  Arrow functions have no name — give one (`action({ name: 'make_published', description, … }, async (…) => …)`),
+  otherwise a slug of the description is used.
 - `permissions: ['add' | 'change' | 'delete' | 'view' | 'x']` — the action is offered when any of
   `hasAddPermission(c)` … / `hasXPermission(c)` is true.
 - `delete_selected` ("Delete selected …") is a site-wide action with a confirmation page listing every object

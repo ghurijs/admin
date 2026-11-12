@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `@display` / `@action` also work as legacy decorators compiled by Babel with decorator metadata (jiti — the `ghuri` CLI's loader).
+- Function actions take a `name` option; anonymous (arrow) functions fall back to a slug of the description instead of the shared name `action`.
+
 ## 0.1.0-alpha.0
 
 - Initial alpha: a Django-admin clone for Ghuri.

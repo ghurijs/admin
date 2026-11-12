@@ -32,6 +32,18 @@ describe('actions', () => {
     expect(body).toContain('id="action-toggle"')
   })
 
+  it('names anonymous function actions after `name` or their description', async () => {
+    const { action: adminAction, ModelAdmin } = await import('../src/index')
+    const ma = Object.create(ModelAdmin.prototype) as InstanceType<typeof ModelAdmin>
+    const named = adminAction({ name: 'publish_all', description: 'Publish' }, async () => {})
+    const described = adminAction(
+      { description: 'Mark selected %(verbose_name_plural)s as read' },
+      async () => {},
+    )
+    expect(ma.getAction(named)?.name).toBe('publish_all')
+    expect(ma.getAction(described)?.name).toBe('mark_selected_as_read')
+  })
+
   it('runs a function action on the selected objects', async () => {
     const [a, b, c] = await posts(3)
     const res = await s.client.post('/admin/blog/post/?q=P', {

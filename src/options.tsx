@@ -70,6 +70,14 @@ import {
   unquote,
 } from './utils'
 
+/** `'Mark selected %(verbose_name_plural)s as published'` → `'mark_selected_as_published'`. */
+function actionSlug(description: string | undefined): string {
+  return (description ?? '')
+    .replace(/%\([a-z_]+\)s/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
 export const HORIZONTAL = 'horizontal' as const
 export const VERTICAL = 'vertical' as const
 
@@ -883,7 +891,7 @@ export class ModelAdmin<M extends BaseModel = any> extends BaseModelAdmin<M> {
   getAction(action: ActionFunction | string): ResolvedAction | null {
     if (typeof action === 'function') {
       const opts = getActionOptions(action)
-      const name = action.name || 'action'
+      const name = opts?.name || action.name || actionSlug(opts?.description) || 'action'
       return {
         name,
         description: opts?.description ?? capfirst(humanize(name)),
