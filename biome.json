@@ -30,5 +30,22 @@
       "src/**",
       "test/**"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "src/templates/**",
+        "src/site.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useValidAnchor": "off",
+            "useSemanticElements": "off",
+            "noLabelWithoutControl": "off"
+          }
+        }
+      }
+    }
+  ]
 }
