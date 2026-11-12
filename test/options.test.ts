@@ -1,6 +1,15 @@
 import { path } from '@ghuri/core'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { AdminSite, display, HORIZONTAL, ModelAdmin, StackedInline } from '../src/index'
+import {
+  AdminSite,
+  AllValuesFieldListFilter,
+  display,
+  EmptyFieldListFilter,
+  HORIZONTAL,
+  ModelAdmin,
+  RelatedOnlyFieldListFilter,
+  StackedInline,
+} from '../src/index'
 import { ADMIN_JS } from '../src/static/js'
 import { Category, Comment, Post, Publisher } from './blog/models'
 import { type AdminTestSetup, setupAdmin, urls } from './helpers'
@@ -44,7 +53,16 @@ class PostOptions extends ModelAdmin<Post> {
 }
 site.register(Post, PostOptions)
 site.register(Category)
-site.register(Comment)
+class CommentOptions extends ModelAdmin<Comment> {
+  override listDisplay = ['author', 'post', 'text']
+  override listFilter: any = [
+    ['post', RelatedOnlyFieldListFilter],
+    ['author', AllValuesFieldListFilter],
+    ['text', EmptyFieldListFilter],
+  ]
+  override listPerPage = 100
+}
+site.register(Comment, CommentOptions)
 
 class PublisherOptions extends ModelAdmin<Publisher> {
   override exclude = ['name']
@@ -147,6 +165,31 @@ describe('ModelAdmin options', () => {
   it('excludes fields', async () => {
     const body = await (await s.client.get('/opts/blog/publisher/add/')).text()
     expect(body).not.toContain('name="name"')
+  })
+
+  it('supports related-only, all-values and empty filters', async () => {
+    const used = await Post.objects.create({ title: 'Used', slug: 'used' })
+    await Post.objects.create({ title: 'Unused', slug: 'unused' })
+    const used2 = await Post.objects.create({ title: 'Used too', slug: 'used2' })
+    await Comment.objects.create({ postId: used2.pk, author: 'amy', text: 'hi' } as any)
+    await Comment.objects.create({ postId: used.pk, author: 'zed', text: '' } as any)
+    await Comment.objects.create({ postId: used.pk, author: 'amy', text: 'hello' } as any)
+    const page = await (await s.client.get('/opts/blog/comment/')).text()
+    expect(page).toContain(`?post__id__exact=${used.pk}`)
+    expect(page).not.toContain('>Unused<')
+    expect(page).toContain('href="?author__exact=amy"')
+    expect(page).toContain('href="?text__isempty=1"')
+    const empty = await (await s.client.get('/opts/blog/comment/?text__isempty=1')).text()
+    expect(empty).toContain('<th class="field-author"><a href="/opts/blog/comment/')
+    expect(empty).toMatch(/field-author"><a [^>]*>zed<\/a>/)
+    expect(empty).not.toMatch(/field-author"><a [^>]*>amy<\/a>/)
+    const notEmpty = await (await s.client.get('/opts/blog/comment/?text__isempty=0')).text()
+    expect(notEmpty).toMatch(/field-author"><a [^>]*>amy<\/a>/)
+    expect(notEmpty).not.toMatch(/field-author"><a [^>]*>zed<\/a>/)
+    expect(page).toContain(`?post__id__exact=${used2.pk}`)
+    const byAuthor = await (await s.client.get('/opts/blog/comment/?author__exact=zed')).text()
+    expect(byAuthor).toMatch(/field-author"><a [^>]*>zed<\/a>/)
+    expect(byAuthor).not.toMatch(/field-author"><a [^>]*>amy<\/a>/)
   })
 
   it('ships syntactically valid JavaScript', () => {

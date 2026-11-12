@@ -80,6 +80,19 @@ export interface FieldsetOptions {
 }
 /** `[name | null, { fields, classes?, description? }]` (Django's fieldsets). */
 export type Fieldset = [string | null, FieldsetOptions]
+/** What `fieldsets` accepts: `Fieldset`s, or plain arrays (class field literals aren't inferred as tuples). */
+export type FieldsetsInput = ReadonlyArray<Fieldset | ReadonlyArray<string | null | FieldsetOptions>>
+
+/** Normalize `fieldsets` to `[name, options]` tuples. */
+export function normalizeFieldsets(input: FieldsetsInput): Fieldset[] {
+  return input.map((entry) => {
+    const [name, opts] = entry as unknown as [string | null | undefined, FieldsetOptions | undefined]
+    if (!opts || typeof opts !== 'object' || !Array.isArray(opts.fields)) {
+      throw new Error(`Invalid fieldset ${JSON.stringify(entry)}: expected [name | null, { fields: [...] }].`)
+    }
+    return [name ?? null, opts]
+  })
+}
 
 /** An admin action: `(modelAdmin, c, queryset) => Response | void`. */
 export type ActionFunction = (
@@ -95,7 +108,10 @@ export interface ResolvedAction {
   permissions?: string[]
 }
 
-export type FormfieldOverrides = Record<string, Partial<FormFieldOptions>>
+export type FormfieldOverrides = Record<
+  string,
+  Partial<Omit<FormFieldOptions, 'widget'>> & { widget?: WidgetType | string }
+>
 
 /** Options shared by ModelAdmin and inlines (Django's BaseModelAdmin). */
 export abstract class BaseModelAdmin<M extends BaseModel = any> {
@@ -104,14 +120,15 @@ export abstract class BaseModelAdmin<M extends BaseModel = any> {
 
   fields: Array<string | string[]> | null = null
   exclude: string[] | null = null
-  fieldsets: Fieldset[] | null = null
+  fieldsets: FieldsetsInput | null = null
   readonlyFields: ListDisplayItem[] = []
   prepopulatedFields: Record<string, string[]> = {}
   rawIdFields: string[] = []
   autocompleteFields: string[] = []
   filterHorizontal: string[] = []
   filterVertical: string[] = []
-  radioFields: Record<string, 'horizontal' | 'vertical'> = {}
+  /** `{ field: HORIZONTAL | VERTICAL }` (`'horizontal' | 'vertical'`). */
+  radioFields: Record<string, string> = {}
   /** Per field type overrides, keyed by `internalType` (`{ TextField: { widget: 'text' } }`). */
   formfieldOverrides: FormfieldOverrides = {}
   ordering: string[] | null = null
@@ -217,7 +234,7 @@ export abstract class BaseModelAdmin<M extends BaseModel = any> {
 
   /** Django's `get_fieldsets`. */
   async getFieldsets(c: Context, obj?: M | null): Promise<Fieldset[]> {
-    if (this.fieldsets) return this.fieldsets
+    if (this.fieldsets) return normalizeFieldsets(this.fieldsets)
     return [[null, { fields: await this.getFields(c, obj) }]]
   }
 

@@ -39,7 +39,8 @@ export type ListFilterItem =
   | (new (
       ...args: any[]
     ) => SimpleListFilter)
-  | [string, new (...args: any[]) => FieldListFilter]
+  /** `['field', FilterClass]` (a plain array is accepted so class fields need no `as const`). */
+  | ReadonlyArray<string | (new (...args: any[]) => FieldListFilter)>
 
 export interface ChangeListOptions {
   listDisplay: ListDisplayItem[]
@@ -156,7 +157,7 @@ export class ChangeList {
         const field = filterFieldFor(this.model, item)
         spec = FieldListFilter.create(field, this.c, params, this.model, this.modelAdmin, item)
       } else if (Array.isArray(item)) {
-        const [path, cls] = item
+        const [path, cls] = item as [string, new (...args: any[]) => FieldListFilter]
         const field = filterFieldFor(this.model, path)
         spec = new (cls as any)(field, this.c, params, this.model, this.modelAdmin, path)
       } else {
