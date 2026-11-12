@@ -250,6 +250,30 @@ describe('inlines', () => {
     })
     expect(await res.text()).toContain('ManagementForm data is missing or has been tampered with.')
   })
+  it('copies inline rows with save as new', async () => {
+    const p = await Post.objects.create({
+      title: 'Orig',
+      slug: 'orig',
+      createdAt: new Date('2024-05-01T10:30:00Z'),
+    })
+    const c = await Comment.objects.create({ postId: p.pk, author: 'x', text: 'y' } as any)
+    const res = await s.client.post(`/admin/blog/post/${p.pk}/change/`, {
+      form: postForm({
+        title: 'Copy',
+        slug: 'copy',
+        _saveasnew: '1',
+        'comments-TOTAL_FORMS': '1',
+        'comments-INITIAL_FORMS': '1',
+        'comments-0-id': String(c.pk),
+        'comments-0-author': 'x',
+        'comments-0-text': 'y',
+      }),
+    })
+    expect(res.status).toBe(302)
+    const copy = await Post.objects.get({ slug: 'copy' })
+    expect(await Comment.objects.filter({ postId: copy.pk }).count()).toBe(1)
+    expect(await Comment.objects.filter({ postId: p.pk }).count()).toBe(1)
+  })
 })
 
 describe('delete', () => {

@@ -620,6 +620,8 @@ export interface InlineFormSetOptions {
   /** Existing rows can't be changed (view-only users / no change permission). */
   readonly?: boolean
   canAdd?: boolean
+  /** "Save as new": every submitted row becomes a new object (Django's `save_as_new`). */
+  saveAsNew?: boolean
 }
 
 export interface FormsetSaveResult {
@@ -660,6 +662,7 @@ export class InlineFormSet {
   }
 
   initialFormCount(): number {
+    if (this.opts.saveAsNew) return 0
     if (this.isBound) {
       const n = Number.parseInt(String(this.data.get(this.mgmt(INITIAL_FORM_COUNT)) ?? ''), 10)
       return Number.isFinite(n) ? Math.max(0, Math.min(n, ABSOLUTE_MAX)) : 0

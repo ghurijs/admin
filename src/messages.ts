@@ -1,5 +1,6 @@
 // A tiny flash-message store (Django's contrib.messages): session-backed when SessionMiddleware is
-// installed, a cookie otherwise. Messages are plain text and always rendered escaped.
+// installed, a signed cookie otherwise. Messages are plain text and always rendered escaped.
+import { dumps, loads } from '@ghuri/auth'
 import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 
@@ -48,24 +49,21 @@ function session(c: Context): any {
   }
 }
 
-function encodeCookie(list: Array<[number, string]>): string {
-  const json = JSON.stringify(list)
-  const bytes = new TextEncoder().encode(json)
-  let bin = ''
-  for (const b of bytes) bin += String.fromCharCode(b)
-  return btoa(bin)
+const COOKIE_SALT = 'ghuri.admin.messages'
+
+/** Signed (SECRET_KEY) cookie payload, so clients can't inject messages. */
+function encodeCookie(list: Array<[number, string]>): Promise<string> {
+  return dumps(list.slice(-20), { salt: COOKIE_SALT })
 }
 
-function decodeCookie(raw: string | undefined): Array<[number, string]> {
+async function decodeCookie(raw: string | undefined): Promise<Array<[number, string]>> {
   if (!raw) return []
   try {
-    const bin = atob(raw)
-    const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0))
-    const list = JSON.parse(new TextDecoder().decode(bytes))
+    const list = await loads<unknown>(raw, { salt: COOKIE_SALT })
     if (!Array.isArray(list)) return []
     return list
       .filter((m) => Array.isArray(m) && typeof m[0] === 'number' && typeof m[1] === 'string')
-      .slice(0, 20)
+      .slice(0, 20) as Array<[number, string]>
   } catch {
     return []
   }
@@ -80,10 +78,10 @@ export async function addMessage(c: Context, level: MessageLevel, message: strin
     await s.set(SESSION_KEY, [...list, entry])
     return
   }
-  if (!(c as any)[PENDING]) (c as any)[PENDING] = decodeCookie(getCookie(c, COOKIE_NAME))
+  if (!(c as any)[PENDING]) (c as any)[PENDING] = await decodeCookie(getCookie(c, COOKIE_NAME))
   const pending: Array<[number, string]> = (c as any)[PENDING]
   pending.push(entry)
-  setCookie(c, COOKIE_NAME, encodeCookie(pending), { path: '/', httpOnly: true, sameSite: 'Lax' })
+  setCookie(c, COOKIE_NAME, await encodeCookie(pending), { path: '/', httpOnly: true, sameSite: 'Lax' })
 }
 
 /** Read and clear the queued messages. */
@@ -94,7 +92,7 @@ export async function consumeMessages(c: Context): Promise<Message[]> {
     list = ((await s.get(SESSION_KEY, [])) as Array<[number, string]>) ?? []
     if (list.length) await s.delete(SESSION_KEY)
   } else {
-    list = (c as any)[PENDING] ?? decodeCookie(getCookie(c, COOKIE_NAME))
+    list = (c as any)[PENDING] ?? (await decodeCookie(getCookie(c, COOKIE_NAME)))
     if (list.length) deleteCookie(c, COOKIE_NAME, { path: '/' })
     ;(c as any)[PENDING] = []
   }

@@ -1970,7 +1970,7 @@ export class InlineModelAdmin<M extends BaseModel = any> extends BaseModelAdmin<
     parentObj: BaseModel | null,
     prefix: string,
     data: FormDataLike | undefined,
-    _saveAsNew: boolean,
+    saveAsNew: boolean,
   ): Promise<InlineFormSet> {
     const fkName = this.fk.name
     const readonly = (await this.getReadonlyFields(c, null)).filter((r): r is string => typeof r === 'string')
@@ -1992,6 +1992,7 @@ export class InlineModelAdmin<M extends BaseModel = any> extends BaseModelAdmin<
       maxNum: canAdd ? (this.getMaxNum(c, parentObj) ?? 1000) : 0,
       canDelete,
       readonly: !canChange,
+      saveAsNew,
       canAdd,
     })
     await formset.init()

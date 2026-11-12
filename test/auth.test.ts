@@ -95,6 +95,21 @@ describe('login / logout', () => {
     const add = await s.client.post('/admin/blog/category/add/', { form: { name: 'x' }, csrf: false })
     expect(add.status).toBe(403)
   })
+  it('accepts the token from the csrfmiddlewaretoken form field (urlencoded and multipart)', async () => {
+    await s.superuser()
+    const page = await (await s.client.get('/admin/blog/category/add/')).text()
+    const token = /name="csrfmiddlewaretoken" value="([^"]+)"/.exec(page)![1]
+    const res = await s.client.post('/admin/blog/category/add/', {
+      form: { csrfmiddlewaretoken: token, name: 'Via form field' },
+      csrf: false,
+    })
+    expect(res.status).toBe(302)
+    const multipart = await s.client.post('/admin/blog/attachment/add/', {
+      form: { csrfmiddlewaretoken: token, name: 'Multi', file: new File(['x'], 'x.txt') },
+      csrf: false,
+    })
+    expect(multipart.status).toBe(302)
+  })
 })
 
 describe('password change', () => {

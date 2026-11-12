@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { path } from '@ghuri/core'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { AdminSite, display, HORIZONTAL, ModelAdmin, StackedInline } from '../src/index'
 import { ADMIN_JS } from '../src/static/js'
 import { Category, Comment, Post, Publisher } from './blog/models'
@@ -16,10 +16,21 @@ class StackedComments extends StackedInline<Comment> {
 }
 
 class PostOptions extends ModelAdmin<Post> {
-  override fields = ['title', ['slug', 'status'], 'category', 'publisher', 'tags', 'body', 'createdAt', 'summary']
-  override readonlyFields = [display({ description: 'Summary line' }, function summary(obj: Post) {
-    return `${obj.title} (${obj.views} views)`
-  })]
+  override fields = [
+    'title',
+    ['slug', 'status'],
+    'category',
+    'publisher',
+    'tags',
+    'body',
+    'createdAt',
+    'summary',
+  ]
+  override readonlyFields = [
+    display({ description: 'Summary line' }, function summary(obj: Post) {
+      return `${obj.title} (${obj.views} views)`
+    }),
+  ]
   override radioFields = { status: HORIZONTAL, publisher: 'vertical' as const }
   override rawIdFields = ['category']
   override filterVertical = ['tags']
@@ -56,7 +67,13 @@ describe('ModelAdmin options', () => {
   it('renders fields, lines, radio, raw id, overrides and readonly callables', async () => {
     const cat = await Category.objects.create({ name: 'Cat <1>' })
     const pub = await Publisher.objects.create({ name: 'Pub' })
-    const p = await Post.objects.create({ title: 'T', slug: 't', categoryId: cat.pk, publisherId: pub.pk, views: 3 } as any)
+    const p = await Post.objects.create({
+      title: 'T',
+      slug: 't',
+      categoryId: cat.pk,
+      publisherId: pub.pk,
+      views: 3,
+    } as any)
     await Comment.objects.create({ postId: p.pk, author: 'a', text: 'b', approved: true } as any)
     const body = await (await s.client.get(`/opts/blog/post/${p.pk}/change/`)).text()
     expect(body).toContain('class="form-row field-slug field-status"')
@@ -66,7 +83,9 @@ describe('ModelAdmin options', () => {
     expect(body).toContain(`type="radio" name="publisher" value="${pub.pk}"`)
     expect(body).toContain('class="vForeignKeyRawIdAdminField"')
     expect(body).toContain('href="/opts/blog/category/"')
-    expect(body).toContain(`<strong><a href="/opts/blog/category/${cat.pk}/change/">Cat &lt;1&gt;</a></strong>`)
+    expect(body).toContain(
+      `<strong><a href="/opts/blog/category/${cat.pk}/change/">Cat &lt;1&gt;</a></strong>`,
+    )
     expect(body).toContain('class="selector stacked"')
     expect(body).toMatch(/<input type="text" name="body" id="id_body"[^>]*size="80"/)
     expect(body).toContain('<label>Summary line:</label><div class="readonly">T (3 views)</div>')
@@ -102,9 +121,19 @@ describe('ModelAdmin options', () => {
     expect(p.categoryId).toBe(cat.pk)
     expect(p.publisherId).toBe(pub.pk)
     const bad = await s.client.post('/opts/blog/post/add/', {
-      form: { title: 'X', slug: 'x', status: 'draft', category: '999', createdAt: '2024-01-01T00:00', 'comments-TOTAL_FORMS': '0', 'comments-INITIAL_FORMS': '0' },
+      form: {
+        title: 'X',
+        slug: 'x',
+        status: 'draft',
+        category: '999',
+        createdAt: '2024-01-01T00:00',
+        'comments-TOTAL_FORMS': '0',
+        'comments-INITIAL_FORMS': '0',
+      },
     })
-    expect(await bad.text()).toContain('Select a valid choice. That choice is not one of the available choices.')
+    expect(await bad.text()).toContain(
+      'Select a valid choice. That choice is not one of the available choices.',
+    )
   })
 
   it('honours listDisplayLinks = null, emptyValueDisplay and actions = null', async () => {
