@@ -278,8 +278,8 @@ export function DeleteConfirmationPage(p: DeleteConfirmationProps) {
       <>
         <p>
           {p.bulk
-            ? `Deleting the selected ${p.objectName} would result in deleting related objects, but your account doesn't have permission to delete the following types of objects:`
-            : `Deleting ${what} would result in deleting related objects, but your account doesn't have permission to delete the following types of objects:`}
+            ? `Deleting the selected ${p.objectName} would result in deleting related objects, but your account doesn’t have permission to delete the following types of objects:`
+            : `Deleting ${what} would result in deleting related objects, but your account doesn’t have permission to delete the following types of objects:`}
         </p>
         <h2>Objects</h2>
         <ul id="deleted-objects">

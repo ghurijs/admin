@@ -21,11 +21,15 @@ import {
 } from '@ghuri/core'
 import { createTestClient } from '@ghuri/core/testing'
 import { createTablesForModels, setupTestDatabase, type TestBackend } from '@ghuri/orm/testing'
+import { memoryStorage } from '@ghuri/storage'
 import { AdminConfig, admin } from '../src/index'
 import { BlogConfig } from './blog/app'
 
 export const SECRET = 'admin-test-secret'
 export const FAST_HASHERS = [new PBKDF2PasswordHasher({ iterations: 1000 })]
+
+/** In-memory media storage shared by the tests. */
+export const media = memoryStorage()
 
 export const urls = [path('admin/', admin.site.urls)]
 
@@ -46,6 +50,8 @@ export async function setupAdmin(opts: SetupOptions = {}) {
     MIDDLEWARE: [SessionMiddleware, CsrfMiddleware, AuthenticationMiddleware],
     ROOT_URLCONF: opts.urls ?? urls,
     PASSWORD_HASHERS: FAST_HASHERS,
+    STORAGES: { default: media },
+    MEDIA_URL: '/media/',
     ...opts.settings,
   }))
   const app = createApp(settings)

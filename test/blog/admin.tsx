@@ -9,7 +9,7 @@ import {
   StackedInline,
   TabularInline,
 } from '../../src/index'
-import { Category, Comment, Post, Publisher, Tag } from './models'
+import { Attachment, Category, Comment, Post, Publisher, Tag } from './models'
 
 export class CommentInline extends TabularInline<Comment> {
   model = Comment
@@ -104,7 +104,7 @@ export class TagAdmin extends ModelAdmin<Tag> {
   override searchFields = ['name']
 }
 
-admin.site.register(Publisher)
+admin.site.register([Publisher, Attachment])
 
 export class CommentAdmin extends ModelAdmin<Comment> {
   override listDisplay = ['author', 'post', 'approved']

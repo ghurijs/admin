@@ -283,6 +283,7 @@ function Pagination({ props }: { props: ChangeListPageProps }) {
             ),
           )
         : null}
+      {pages.length ? ' ' : ''}
       {cl.resultCount} {cl.resultCount === 1 ? props.verboseName : props.verboseNamePlural}
       {cl.multiPage && cl.canShowAll && !cl.showAll ? (
         <>

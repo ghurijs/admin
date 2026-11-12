@@ -16,6 +16,7 @@ import {
   SlugField,
   TextField,
 } from '@ghuri/orm'
+import { FileField } from '@ghuri/storage'
 
 export class Category extends Model({
   name: new CharField({ maxLength: 100, unique: true }),
@@ -90,5 +91,15 @@ export class Comment extends Model({
   declare static objects: Manager<Comment>
   override toString() {
     return `Comment by ${this.author}`
+  }
+}
+
+export class Attachment extends Model({
+  name: new CharField({ maxLength: 100 }),
+  file: new FileField({ uploadTo: 'docs/', blank: true }),
+}) {
+  declare static objects: Manager<Attachment>
+  override toString() {
+    return this.name
   }
 }

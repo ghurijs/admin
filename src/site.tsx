@@ -189,6 +189,8 @@ export class AdminSite {
   }
 
   private isActive(model: ModelClass, reg: Registration): boolean {
+    // Models of apps that aren't installed have no app label: skip them instead of failing every page.
+    if (!(model._meta as any).hasAppLabel) return false
     if (!reg.auto) return true
     try {
       const label = model._meta.appLabel
@@ -317,7 +319,7 @@ export class AdminSite {
         wrap((c) => this.autocompleteView(c)),
         { name: 'autocomplete' },
       ),
-      path('static/<path:path>', (c) => this.staticView(c), { name: 'static' }),
+      path('static/<str:path>', (c) => this.staticView(c), { name: 'static' }),
     ]
     const labels = new Set<string>()
     for (const [model, ma] of this.registry) {
@@ -338,7 +340,8 @@ export class AdminSite {
     }
     if (this.finalCatchAll) {
       this.catchAllView = (c) => this.catchAll(c)
-      urls.push(path('<path:url>', this.catchAllView))
+      // A regex Hono can't express, so it is matched after every other admin route (in order).
+      urls.push(rePath('^(?!static/)(?P<url>.*)$', this.catchAllView))
     }
     return urls
   }

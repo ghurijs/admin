@@ -23,6 +23,17 @@ export interface LookupResult {
   value: unknown
 }
 
+/** A method defined on a class prototype chain (getters are not invoked). */
+export function protoMethod(proto: object | undefined, name: string): Function | undefined {
+  let p = proto
+  while (p && p !== Object.prototype) {
+    const d = Object.getOwnPropertyDescriptor(p, name)
+    if (d) return typeof d.value === 'function' ? d.value : undefined
+    p = Object.getPrototypeOf(p)
+  }
+  return undefined
+}
+
 /** Is `v` already markup (JSX element or `html`/`raw` string)? */
 export function isMarkup(v: unknown): boolean {
   if (v === null || typeof v !== 'object') return false
@@ -122,9 +133,7 @@ export function labelForField(
     }
     return capfirst(f.verboseName)
   }
-  const proto = (model as any).prototype
-  const attr = proto?.[name]
-  const d = getDisplayOptions(attr)
+  const d = getDisplayOptions(protoMethod((model as any).prototype, name))
   if (d?.description) return d.description
   if (name === 'pk') return 'ID'
   return capfirst(humanize(name))
@@ -145,7 +154,8 @@ export function displayOptionsFor(
   if (typeof name === 'function') return getDisplayOptions(name)
   const ma = modelAdmin as any
   if (ma && typeof ma[name] === 'function') return getDisplayOptions(ma[name])
-  return getDisplayOptions((model as any).prototype?.[name])
+  if (model._meta.getForwardField(name)) return undefined
+  return getDisplayOptions(protoMethod((model as any).prototype, name))
 }
 
 export function BooleanIcon({ value }: { value: unknown }) {

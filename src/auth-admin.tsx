@@ -163,7 +163,7 @@ export class UserAdmin extends ModelAdmin<any> {
   override getUrls(): UrlEntry[] {
     return [
       path(
-        '<path:object_id>/password/',
+        '<str:object_id>/password/',
         this.adminSite.adminView((c) => this.userChangePassword(c, kwargs(c).object_id)),
         { name: `${this.urlInfo}_password_change` },
       ),

@@ -556,28 +556,28 @@ export class ModelAdmin<M extends BaseModel = any> extends BaseModelAdmin<M> {
         { name: `${info}_add` },
       ),
       path(
-        '<path:object_id>/history/',
+        '<str:object_id>/history/',
         wrap((c) => this.historyView(c, kwargs(c).object_id)),
         {
           name: `${info}_history`,
         },
       ),
       path(
-        '<path:object_id>/delete/',
+        '<str:object_id>/delete/',
         wrap((c) => this.deleteView(c, kwargs(c).object_id)),
         {
           name: `${info}_delete`,
         },
       ),
       path(
-        '<path:object_id>/change/',
+        '<str:object_id>/change/',
         wrap((c) => this.changeView(c, kwargs(c).object_id)),
         {
           name: `${info}_change`,
         },
       ),
       path(
-        '<path:object_id>/',
+        '<str:object_id>/',
         wrap(async (c) => {
           const id = kwargs(c).object_id as string
           return c.redirect(this.adminSite.reverse(`${info}_change`, { object_id: id }), 301)
@@ -989,7 +989,10 @@ export class ModelAdmin<M extends BaseModel = any> extends BaseModelAdmin<M> {
     const preserved = this.getPreservedFilters(c)
     const name = this.opts.verboseName
     const repr = objectRepr(obj)
-    if (data.has('_continue')) {
+    if (
+      data.has('_continue') ||
+      (data.has('_saveasnew') && this.saveAsContinue && (await this.hasChangePermission(c, obj)))
+    ) {
       await this.messageUser(
         c,
         `The ${name} “${repr}” was added successfully. You may edit it again below.`,
